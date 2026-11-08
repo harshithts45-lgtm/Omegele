@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/countryselector.tsx","./src/components/reportdialog.tsx","./src/components/videopanel.tsx","./src/hooks/usematchmaking.ts","./src/hooks/usemedia.ts","./src/hooks/usewebrtc.ts","./src/lib/anonymoussession.ts","./src/lib/countries.ts","./src/lib/supabase.ts"],"version":"5.9.3"}
