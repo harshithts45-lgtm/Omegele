@@ -102,6 +102,19 @@ export default function App() {
     return () => window.clearInterval(id)
   }, [partner, rtc.state])
 
+  // A remote skip/connection failure closes the peer without a local button click.
+  // Return the controls to a usable state instead of leaving the user on a dead call.
+  useEffect(() => {
+    if (!partner || (rtc.state !== 'closed' && rtc.state !== 'failed')) return
+
+    connectingRef.current = null
+    setPartner(null)
+    setElapsed(0)
+    void queue.leave().catch(error => {
+      console.error('Could not close the ended chat session:', error)
+    })
+  }, [partner, rtc.state, queue.leave])
+
   const start = async () => {
     if (!sessionId || !ageConfirmed) return
 
