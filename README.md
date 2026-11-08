@@ -5,12 +5,12 @@ Anonymous, country-preference random video chat built with React, Supabase Realt
 ## Run locally
 
 1. `npm install`
-2. Copy `.env.example` to `.env.local` and fill in the public Supabase URL/anon key plus a production TURN credential.
+2. Copy `.env.example` to `.env.local` and fill in the public Supabase URL/anon key plus production TURN credentials. Add the exact same `VITE_*` TURN values to Vercel's Production environment before deploying; Vite embeds them during the build.
 3. Run [supabase/migrations/001_random_connect.sql](supabase/migrations/001_random_connect.sql) in the Supabase SQL editor.
 4. In Supabase Realtime settings, enable Broadcast (and allow the `chat:*` topic pattern as appropriate for your project).
 5. `npm run dev`
 
-The browser requests camera/mic only after the user confirms 18+ and chooses **Start connecting**. STUN is bundled for development; configure TURN before any production deployment.
+The browser requests camera/mic only after the user confirms 18+ and chooses **Start connecting**. STUN is bundled for development; configure TURN before any production deployment. Include TURN over UDP, TCP and TLS (`turns:`) so calls work across carrier NATs, corporate networks and firewalls. Set `VITE_ICE_TRANSPORT_POLICY=relay` briefly to verify your relay, then switch it back to `all`.
 
 ## Architecture
 

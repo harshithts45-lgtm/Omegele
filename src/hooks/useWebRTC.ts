@@ -11,17 +11,27 @@ type Signal = {
   payload?: RTCSessionDescriptionInit | RTCIceCandidateInit
 }
 
-const iceServers: RTCIceServer[] = [
-  { urls: 'stun:stun.l.google.com:19302' }
-]
+const turnUrls = (import.meta.env.VITE_TURN_URLS || import.meta.env.VITE_TURN_URL || '')
+  .split(',')
+  .map(url => url.trim())
+  .filter(Boolean)
 
-if (import.meta.env.VITE_TURN_URL) {
+const iceServers: RTCIceServer[] = [{
+  urls: 'stun:stun.l.google.com:19302'
+}]
+
+if (turnUrls.length > 0) {
   iceServers.push({
-    urls: import.meta.env.VITE_TURN_URL,
+    // Configure UDP, TCP and TLS TURN URLs in VITE_TURN_URLS. Browsers try
+    // them in order when a direct peer-to-peer route is unavailable.
+    urls: turnUrls,
     username: import.meta.env.VITE_TURN_USERNAME,
     credential: import.meta.env.VITE_TURN_CREDENTIAL
   })
 }
+
+const transportPolicy: RTCIceTransportPolicy =
+  import.meta.env.VITE_ICE_TRANSPORT_POLICY === 'relay' ? 'relay' : 'all'
 
 export function useWebRTC(
   localStream: MediaStream | null,
@@ -125,7 +135,10 @@ export function useWebRTC(
 
     console.log('[RTC] Connecting:', { roomId, initiator, selfId })
 
-    const pc = new RTCPeerConnection({ iceServers })
+    const pc = new RTCPeerConnection({
+      iceServers,
+      iceTransportPolicy: transportPolicy
+    })
     peer.current = pc
 
     localStream.getTracks().forEach(track => {
@@ -155,8 +168,21 @@ export function useWebRTC(
       console.log('[RTC] ICE state:', pc.iceConnectionState)
     }
 
+    pc.onicecandidateerror = event => {
+      // A 701 error means the browser could not reach the STUN/TURN server.
+      // Do not surface TURN credentials; the URL and error code are sufficient
+      // for diagnosing a failed relay in browser DevTools.
+      console.error('[RTC] ICE server error:', {
+        url: event.url,
+        errorCode: event.errorCode,
+        errorText: event.errorText
+      })
+    }
+
     pc.onicecandidate = event => {
       if (event.candidate) {
+        const type = event.candidate.type || 'unknown'
+        console.log('[RTC] Local ICE candidate:', type)
         void send({
           type: 'ice',
           from: selfId,
